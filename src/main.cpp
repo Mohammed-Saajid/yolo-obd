@@ -1,14 +1,27 @@
 #include <iostream>
+#include <iomanip>
+#include <limits>
+#include <map>
 #include <opencv2/opencv.hpp>
 #include "inference_client.hpp"
+#include "scoped_timer.hpp"
+#include "stage_stats.hpp"
+
+
 
 int main() {
     try {
         std::cout << "Initializing Edge Inference Pipeline..." << std::endl;
+        StageStatsMap stage_stats = StageStatsMap();
+        
+        const ScopedTimer::Callback record_timing =
+            [&stage_stats](const std::string& stage, double elapsed_ms) {
+                stage_stats[stage].record(elapsed_ms);
+            };
 
-        // 1. Initialize Network Client
-        std::string triton_url = "localhost:8001";
-        TritonInferenceClient client(triton_url, "yolo26n");
+        // Initialize Network Client
+        const std::string triton_url = "localhost:8001";
+        TritonInferenceClient client(triton_url, "yolo26n", record_timing);
 
         if (client.isServerLive()) {
             std::cout << "SUCCESS: Triton Server is LIVE." << std::endl;
@@ -29,55 +42,70 @@ int main() {
         
         // 3. The Real-Time Execution Loop
         while (true) {
-            cap.read(frame);
-            if (frame.empty()) {
-                std::cerr << "Warning: Blank frame grabbed." << std::endl;
-                break;
+            {
+                ScopedTimer timer("capture", record_timing);
+                if (!cap.read(frame) || frame.empty()) {
+                    std::cerr << "Warning: Blank frame grabbed." << std::endl;
+                    break;
+                }
             }
 
-            // === CORE PIPELINE ===
-            
-            // Execute Inference
-            std::vector<Detection> detections = client.infer(frame);
-            
-            // Draw Bounding Boxes
-            for (const auto& det : detections) {
-                // Draw Rectangle
-                cv::Point pt1(static_cast<int>(det.x1), static_cast<int>(det.y1));
-                cv::Point pt2(static_cast<int>(det.x2), static_cast<int>(det.y2));
-                cv::rectangle(frame, pt1, pt2, cv::Scalar(0, 255, 0), 2); // Green box, thickness 2
-                
-                // Draw Label and Confidence
-                std::string label = "Class " + std::to_string(det.class_id) + " : " + std::to_string(det.confidence).substr(0, 4);
-                int baseLine;
-                cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
-                cv::Point text_origin(pt1.x, std::max(pt1.y - 5, labelSize.height));
-                
-                // Background for text visibility
-                cv::rectangle(frame, text_origin + cv::Point(0, baseLine), 
-                              text_origin + cv::Point(labelSize.width, -labelSize.height), 
-                              cv::Scalar(0, 255, 0), cv::FILLED);
-                
-                // Text
-                cv::putText(frame, label, text_origin, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
+            std::vector<Detection> detections;
+            {
+                ScopedTimer timer("inference_pipeline", record_timing);
+                detections = client.infer(frame);
             }
 
+            {
+                ScopedTimer timer("render", record_timing);
+                for (const auto& det : detections) {
+                    cv::Point pt1(static_cast<int>(det.x1), static_cast<int>(det.y1));
+                    cv::Point pt2(static_cast<int>(det.x2), static_cast<int>(det.y2));
+                    cv::rectangle(frame, pt1, pt2, cv::Scalar(0, 255, 0), 2);
 
-            cv::imshow("Edge Inference - Raw Feed", frame);
-            
-            // Wait 1ms for UI, break if 'q' is pressed
-            if (cv::waitKey(1) == 'q') {
+                    std::string label = "Class " + std::to_string(det.class_id) + " : " +
+                        std::to_string(det.confidence).substr(0, 4);
+                    int baseLine;
+                    cv::Size labelSize = cv::getTextSize(
+                        label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine
+                    );
+                    cv::Point text_origin(pt1.x, std::max(pt1.y - 5, labelSize.height));
+                    cv::rectangle(
+                        frame,
+                        text_origin + cv::Point(0, baseLine),
+                        text_origin + cv::Point(labelSize.width, -labelSize.height),
+                        cv::Scalar(0, 255, 0),
+                        cv::FILLED
+                    );
+                    cv::putText(
+                        frame, label, text_origin, cv::FONT_HERSHEY_SIMPLEX,
+                        0.5, cv::Scalar(0, 0, 0), 1
+                    );
+                }
+            }
+
+            int key;
+            {
+                ScopedTimer timer("display", record_timing);
+                cv::imshow("Edge Inference - Raw Feed", frame);
+                key = cv::waitKey(1);
+            }
+
+            if (key == 'q') {
                 break;
             }
         }
 
         cap.release();
         cv::destroyAllWindows();
-        std::cout << "Pipeline terminated successfully." << std::endl;
+
+       print_summary(stage_stats);
         
+
+        std::cout << "Pipeline terminated successfully." << std::endl;
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "Exception caught: " << e.what() << std::endl;
-        return 1;
+        return -1;
     }
 }

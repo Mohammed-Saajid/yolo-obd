@@ -14,8 +14,14 @@ message(STATUS "OpenCV include directories: ${OpenCV_INCLUDE_DIRS}")
 set(TRITON_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/triton/include)
 set(TRITON_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/triton/lib)
 
+add_library(stage_stats STATIC
+    src/stage_stats.cpp
+)
+
+target_include_directories(stage_stats PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Define the executable and all source files
-add_executable(InferenceBackend 
+add_executable(InferenceBackend
     src/main.cpp
     src/inference_client.cpp
     src/scoped_timer.cpp
@@ -36,4 +42,8 @@ target_link_directories(InferenceBackend PRIVATE ${TRITON_LIB_DIR})
 target_link_libraries(InferenceBackend PRIVATE 
     ${OpenCV_LIBS}
     grpcclient
+    stage_stats
 )
+
+enable_testing()
+add_subdirectory(tests)
