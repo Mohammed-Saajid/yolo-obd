@@ -2,9 +2,15 @@
 #include "grpc_client.h"
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 
-TritonInferenceClient::TritonInferenceClient(const std::string& url, const std::string& model_name) 
-    : model_name_(model_name) {
+TritonInferenceClient::TritonInferenceClient(
+    const std::string& url,
+    const std::string& model_name,
+    ScopedTimer::Callback timer_callback
+)
+    : model_name_(model_name),
+      timer_callback_(std::move(timer_callback)) {
     
     // Modern Triton API (v2.41+) requires passing the address of the unique_ptr directly
     triton::client::Error err = triton::client::InferenceServerGrpcClient::Create(&client_, url);
@@ -44,7 +50,11 @@ std::vector<float> TritonInferenceClient::preprocess(const cv::Mat& frame) {
 }
 
 std::vector<Detection> TritonInferenceClient::infer(const cv::Mat& frame) {
-    std::vector<float> input_data = preprocess(frame);
+    std::vector<float> input_data;
+    {
+        ScopedTimer timer("preprocess", timer_callback_);
+        input_data = preprocess(frame);
+    }
     std::vector<int64_t> shape = {1, 3, 640, 640};
     
     triton::client::InferInput* input;
@@ -64,7 +74,10 @@ std::vector<Detection> TritonInferenceClient::infer(const cv::Mat& frame) {
     std::vector<const triton::client::InferRequestedOutput*> outputs = {output};
     
     triton::client::InferResult* result;
-    err = client_->Infer(&result, options, inputs, outputs);
+    {
+        ScopedTimer timer("triton_inference", timer_callback_);
+        err = client_->Infer(&result, options, inputs, outputs);
+    }
     if (!err.IsOk()) throw std::runtime_error("Inference failed: " + err.Message());
 
     const float* raw_output;
@@ -72,7 +85,11 @@ std::vector<Detection> TritonInferenceClient::infer(const cv::Mat& frame) {
     err = result->RawData("output0", reinterpret_cast<const uint8_t**>(&raw_output), &output_byte_size);
     if (!err.IsOk()) throw std::runtime_error("Failed to read output: " + err.Message());
 
-    std::vector<Detection> detections = postprocess(raw_output, frame.cols, frame.rows);
+    std::vector<Detection> detections;
+    {
+        ScopedTimer timer("postprocess", timer_callback_);
+        detections = postprocess(raw_output, frame.cols, frame.rows);
+    }
     
     delete input;
     delete output;

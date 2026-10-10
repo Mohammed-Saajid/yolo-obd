@@ -3,6 +3,7 @@
 #include <vector>
 #include <memory>
 #include <opencv2/opencv.hpp>
+#include "scoped_timer.hpp"
 
 // Forward declaration to hide gRPC includes from the rest of the app
 namespace triton { namespace client { class InferenceServerGrpcClient; } }
@@ -15,7 +16,11 @@ struct Detection {
 
 class TritonInferenceClient {
 public:
-    TritonInferenceClient(const std::string& url, const std::string& model_name);
+    TritonInferenceClient(
+        const std::string& url,
+        const std::string& model_name,
+        ScopedTimer::Callback timer_callback = {}
+    );
     ~TritonInferenceClient();
 
     bool isServerLive();
@@ -24,6 +29,7 @@ public:
 private:
     std::unique_ptr<triton::client::InferenceServerGrpcClient> client_;
     std::string model_name_;
+    ScopedTimer::Callback timer_callback_;
     
     std::vector<float> preprocess(const cv::Mat& frame);
     std::vector<Detection> postprocess(const float* raw_output, int original_width, int original_height);
