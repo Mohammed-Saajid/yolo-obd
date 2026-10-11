@@ -45,5 +45,23 @@ target_link_libraries(InferenceBackend PRIVATE
     stage_stats
 )
 
+add_executable(timing_benchmark
+    benchmarks/timing_benchmark.cpp
+    src/inference_client.cpp
+    src/scoped_timer.cpp
+    src/stage_stats.cpp
+)
+
+target_include_directories(timing_benchmark PRIVATE include)
+target_include_directories(timing_benchmark PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(timing_benchmark PRIVATE ${TRITON_CLIENT_DIR})
+target_compile_features(timing_benchmark PRIVATE cxx_std_17)
+target_compile_options(timing_benchmark PRIVATE -Wall -Wextra -Wpedantic)
+target_link_directories(timing_benchmark PRIVATE ${TRITON_LIB_DIR})
+target_link_libraries(timing_benchmark PRIVATE
+    ${OpenCV_LIBS}
+    grpcclient
+)
+
 enable_testing()
 add_subdirectory(tests)
