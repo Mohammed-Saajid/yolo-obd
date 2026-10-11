@@ -1,0 +1,71 @@
+Benchmark configuration
+  model:       yolo26n
+  server:      localhost:8001
+  images:      1000
+  warmup:      10
+  iterations:  100
+
+Stage: inference_pipeline
+  Samples:         100
+  Total           2494.517 ms
+  Average         24.945 ms
+  Minimum         18.965 ms
+  Maximum         39.086 ms
+  Variance        12.842 ms^2
+  Std deviation   3.584 ms
+  P50             24.122 ms
+  P90             28.725 ms
+  P95             33.212 ms
+  P99             37.094 ms
+
+Stage: postprocess
+  Samples:         100
+  Total           0.069 ms
+  Average         0.001 ms
+  Minimum         0.000 ms
+  Maximum         0.007 ms
+  Variance        0.000 ms^2
+  Std deviation   0.001 ms
+  P50             0.001 ms
+  P90             0.001 ms
+  P95             0.001 ms
+  P99             0.002 ms
+
+Stage: triton_inference
+  Samples:         100
+  Total           2069.984 ms
+  Average         20.700 ms
+  Minimum         16.396 ms
+  Maximum         34.050 ms
+  Variance        8.465 ms^2
+  Std deviation   2.909 ms
+  P50             19.950 ms
+  P90             22.887 ms
+  P95             28.191 ms
+  P99             32.027 ms
+
+Stage: preprocess
+  Samples:         100
+  Total           386.331 ms
+  Average         3.863 ms
+  Minimum         1.526 ms
+  Maximum         8.980 ms
+  Variance        1.705 ms^2
+  Std deviation   1.306 ms
+  P50             3.877 ms
+  P90             5.582 ms
+  P95             5.982 ms
+  P99             7.427 ms
+
+Stage: image_load
+  Samples:         100
+  Total           113.228 ms
+  Average         1.132 ms
+  Minimum         0.480 ms
+  Maximum         5.933 ms
+  Variance        0.362 ms^2
+  Std deviation   0.602 ms
+  P50             1.029 ms
+  P90             1.469 ms
+  P95             1.780 ms
+  P99             2.532 ms

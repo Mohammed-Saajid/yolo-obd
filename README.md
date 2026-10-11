@@ -79,6 +79,12 @@ The application will attempt to connect to the Triton server at `localhost:8001`
 
 ## Performance Benchmarks
 
+The backend reports per-stage timing statistics when the application exits. The
+reported stages include camera capture, preprocessing, Triton inference,
+postprocessing, rendering, display, and the complete inference pipeline. Each
+stage includes its sample count, average, minimum, and maximum duration in
+milliseconds.
+
 The following benchmarks were recorded using `perf_analyzer` on an NVIDIA Release 24.05 environment with a batch size of 1.
 
 | Metric | Value |
@@ -96,6 +102,31 @@ The following benchmarks were recorded using `perf_analyzer` on an NVIDIA Releas
 - **Compute Output:** 0.52 ms
 - **Queue Time:** 0.32 ms
 - **Overhead:** 1.91 ms
+
+### Reproducible Stage Benchmark
+
+The `timing_benchmark` executable runs the production preprocessing, Triton
+inference, and postprocessing path without opening a camera or display window.
+Images are discovered in sorted filename order. Warmup iterations are excluded
+from the reported statistics, and measurements include image loading and the
+complete inference pipeline.
+
+With Triton running and the dataset downloaded, run:
+
+```bash
+cmake -S . -B build
+cmake --build build --target timing_benchmark -j$(nproc)
+./build/timing_benchmark \
+	--input data/coco_1k_hf/images \
+	--warmup 20 \
+	--iterations 500 \
+	--output benchmark-results.csv
+```
+
+Use `--max-images N` to limit the deterministic image set. The CSV contains
+sample count, total, average, minimum, maximum, standard deviation, and p50,
+p90, p95, and p99 latency for each stage. Set `--url` and `--model` when
+benchmarking a different Triton endpoint or model.
 
 ## License
 

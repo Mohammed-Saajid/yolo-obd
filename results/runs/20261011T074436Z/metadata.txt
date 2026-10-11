@@ -1,0 +1,41 @@
+Timestamp UTC: 20261011T074436Z
+
+=== Operating system ===
+Linux 6.18.44-1-lts  x86_64 GNU/Linux
+
+=== CPU ===
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           39 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  12
+On-line CPU(s) list:                     0-11
+Vendor ID:                               GenuineIntel
+Model name:                              12th Gen Intel(R) Core(TM) i5-1235U
+CPU family:                              6
+Model:                                   154
+Thread(s) per core:                      2
+Core(s) per socket:                      10
+Socket(s):                               1
+
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       9.9Gi       1.4Gi       1.8Gi       6.4Gi       5.4Gi
+Swap:             0B          0B          0B
+
+=== CMake ===
+cmake version 4.4.2
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+
+=== C++ compiler ===
+c++ (GCC) 16.2.1 20260810
+Copyright (C) 2026 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+=== Build configuration ===
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
