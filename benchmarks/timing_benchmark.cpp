@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
 		}
 
 		const auto run_iteration = [&](const std::filesystem::path& image_path) {
+			ScopedTimer timer("Total time",record_timing);
 		DirectoryImageReader::ImageRecord image_record;
 			{
 				ScopedTimer timer("image_load", record_timing);
