@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_DIR="results/runs/${RUN_ID}"
+RUN_DIR="results/runs/1/${RUN_ID}"
 
 mkdir -p "${RUN_DIR}"
 
@@ -10,22 +10,13 @@ echo "Saving benchmark to ${RUN_DIR}"
 
 # Save the exact source revision and working-tree state.
 git rev-parse HEAD > "${RUN_DIR}/git-commit.txt"
-git status --short > "${RUN_DIR}/git-status.txt"
-git diff > "${RUN_DIR}/git-diff.patch"
-git diff --cached > "${RUN_DIR}/git-staged-diff.patch"
 
 # Record system and build information.
 {
     echo "Timestamp UTC: ${RUN_ID}"
     echo
     echo "=== Operating system ==="
-    uname -a
-    echo
-    echo "=== CPU ==="
-    lscpu
-    echo
-    echo "=== Memory ==="
-    free -h
+    uname -v -m -o
     echo
     echo "=== CMake ==="
     cmake --version
@@ -40,7 +31,7 @@ git diff --cached > "${RUN_DIR}/git-staged-diff.patch"
 
 # Save output while displaying it in the terminal.
 set +e
-taskset -c 0 ./build-release/timing_benchmark \
+taskset -c 0 ./build-release/timing_benchmark --iterations 1000 \
     2>&1 | tee "${RUN_DIR}/output.txt"
 BENCHMARK_STATUS=${PIPESTATUS[0]}
 set -e
