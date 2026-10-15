@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(InferenceBackend VERSION 1.0.0 LANGUAGES CXX)
+project(InferenceBackend VERSION 1.0.0 LANGUAGES CXX CUDA)
 
 # Default to Release build if none is explicitly specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -18,6 +18,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(OpenCV 5.0 REQUIRED)
 message(STATUS "Found OpenCV version: ${OpenCV_VERSION}")
 
+# Find Cuda ToolKit
+find_package(CUDAToolkit REQUIRED)
+
+
+
 # Resolve Triton Client Library & Setup Imported Target
 set(TRITON_CLIENT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/triton/include")
 set(TRITON_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/triton/lib")
@@ -27,6 +32,18 @@ find_library(TRITON_GRPC_LIB
     HINTS ${TRITON_LIB_DIR}
     NO_DEFAULT_PATH
     REQUIRED
+)
+
+add_library(camera_io STATIC
+    src/native_v4l2_camera.cpp
+)
+target_include_directories(camera_io PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+target_link_libraries(
+    camera_io PUBLIC
+    ${OpenCV_LIBS}
+    CUDA::cudart
 )
 
 add_library(Triton::grpcclient UNKNOWN IMPORTED)
@@ -82,6 +99,7 @@ add_executable(InferenceBackend
 target_link_libraries(InferenceBackend PRIVATE
     inference_core
     project_warnings
+    camera_io
 )
 
 # Target 4: Timing Benchmark Executable
@@ -90,6 +108,7 @@ add_executable(timing_benchmark
 )
 target_link_libraries(timing_benchmark PRIVATE
     inference_core
+    ${OpenCV_LIBS}
     project_warnings
 )
 

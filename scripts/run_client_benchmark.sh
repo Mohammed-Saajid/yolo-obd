@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_DIR="results/runs/1/${RUN_ID}"
+RUN_DIR="results/runs/2/${RUN_ID}"
 
 mkdir -p "${RUN_DIR}"
 
@@ -31,7 +31,7 @@ git rev-parse HEAD > "${RUN_DIR}/git-commit.txt"
 
 # Save output while displaying it in the terminal.
 set +e
-taskset -c 0 ./build/release/timing_benchmark --iterations 1000 \
+taskset -c 0 ./build/release/timing_benchmark --iterations 1000 --camera 0 \
     2>&1 | tee "${RUN_DIR}/output.txt"
 BENCHMARK_STATUS=${PIPESTATUS[0]}
 set -e
