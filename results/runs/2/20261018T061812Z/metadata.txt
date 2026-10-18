@@ -1,4 +1,4 @@
-Timestamp UTC: 20261014T095211Z
+Timestamp UTC: 20261018T061812Z
 
 === Operating system ===
 #1 SMP PREEMPT_DYNAMIC Tue, 11 Aug 2026 21:10:19 +0000 x86_64 GNU/Linux
@@ -16,5 +16,4 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 
 === Build configuration ===
-CMAKE_BUILD_TYPE:STRING=Release
-CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++
+grep: build-release/CMakeCache.txt: No such file or directory

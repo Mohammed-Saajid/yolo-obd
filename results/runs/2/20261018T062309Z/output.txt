@@ -1,0 +1,114 @@
+[ WARN:0@0.561] global cap_gstreamer.cpp:1776 open OpenCV | GStreamer warning: Cannot query video position: status=0, value=-1, duration=-1
+Benchmark configuration
+  model:       yolo26n
+  server:      localhost:8001
+  camera:      0
+  warmup:      10
+  iterations:  1000
+Webcam active. Press 'q' to exit.
+
+CSV written to "results/runs/2/20261018T062309Z.csv"
+
+Stage: Total time
+  Samples:         1000
+  Total           60156.231 ms
+  Average         60.156 ms
+  Minimum         49.410 ms
+  Maximum         79.276 ms
+  Variance        6.519 ms^2
+  Std deviation   2.553 ms
+  P50             59.979 ms
+  P90             62.706 ms
+  P95             64.220 ms
+  P99             66.841 ms
+
+Stage: inference_pipeline
+  Samples:         1000
+  Total           26035.375 ms
+  Average         26.035 ms
+  Minimum         23.548 ms
+  Maximum         41.703 ms
+  Variance        3.860 ms^2
+  Std deviation   1.965 ms
+  P50             25.855 ms
+  P90             27.823 ms
+  P95             29.559 ms
+  P99             34.160 ms
+
+Stage: postprocess
+  Samples:         1000
+  Total           0.841 ms
+  Average         0.001 ms
+  Minimum         0.001 ms
+  Maximum         0.002 ms
+  Variance        0.000 ms^2
+  Std deviation   0.000 ms
+  P50             0.001 ms
+  P90             0.001 ms
+  P95             0.001 ms
+  P99             0.002 ms
+
+Stage: display
+  Samples:         1000
+  Total           2849.181 ms
+  Average         2.849 ms
+  Minimum         2.589 ms
+  Maximum         7.917 ms
+  Variance        0.161 ms^2
+  Std deviation   0.402 ms
+  P50             2.778 ms
+  P90             2.965 ms
+  P95             3.086 ms
+  P99             4.893 ms
+
+Stage: render
+  Samples:         1000
+  Total           78.132 ms
+  Average         0.078 ms
+  Minimum         0.000 ms
+  Maximum         0.540 ms
+  Variance        0.001 ms^2
+  Std deviation   0.031 ms
+  P50             0.077 ms
+  P90             0.099 ms
+  P95             0.106 ms
+  P99             0.141 ms
+
+Stage: preprocess
+  Samples:         1000
+  Total           3498.688 ms
+  Average         3.499 ms
+  Minimum         2.394 ms
+  Maximum         9.227 ms
+  Variance        1.058 ms^2
+  Std deviation   1.028 ms
+  P50             4.066 ms
+  P90             4.394 ms
+  P95             5.253 ms
+  P99             6.080 ms
+
+Stage: triton_inference
+  Samples:         1000
+  Total           22376.040 ms
+  Average         22.376 ms
+  Minimum         21.066 ms
+  Maximum         35.058 ms
+  Variance        2.213 ms^2
+  Std deviation   1.487 ms
+  P50             21.960 ms
+  P90             23.418 ms
+  P95             25.629 ms
+  P99             29.947 ms
+
+Stage: capture
+  Samples:         1000
+  Total           31183.548 ms
+  Average         31.184 ms
+  Minimum         15.023 ms
+  Maximum         37.214 ms
+  Variance        5.363 ms^2
+  Std deviation   2.316 ms
+  P50             31.329 ms
+  P90             32.985 ms
+  P95             33.270 ms
+  P99             36.598 ms

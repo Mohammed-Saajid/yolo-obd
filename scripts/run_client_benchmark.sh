@@ -32,6 +32,7 @@ git rev-parse HEAD > "${RUN_DIR}/git-commit.txt"
 # Save output while displaying it in the terminal.
 set +e
 taskset -c 0 ./build/release/timing_benchmark --iterations 1000 --camera 0 \
+    --output "${RUN_DIR}.csv" \
     2>&1 | tee "${RUN_DIR}/output.txt"
 BENCHMARK_STATUS=${PIPESTATUS[0]}
 set -e
