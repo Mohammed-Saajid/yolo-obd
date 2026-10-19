@@ -1,132 +1,198 @@
 # YOLOv26n Real-Time Inference Backend
 
-A high-performance C++ inference client for real-time object detection using YOLOv26n and NVIDIA Triton Inference Server. This project implements a complete edge-ready pipeline from raw webcam frames to visualized bounding box detections.
+A C++17 real-time object detection pipeline for NVIDIA GPUs. Frames are captured from a V4L2 camera, preprocessed on the GPU, sent to NVIDIA Triton through CUDA shared memory, and postprocessed into detections.
 
-## Features
+The current runtime path is designed for low-latency camera inference rather than an OpenCV display loop. The benchmark executable measures the same production path used by `InferenceBackend`.
 
-- **High-Performance C++ Backend:** Efficiently handles frame preprocessing, gRPC communication, and post-processing.
-- **YOLOv26n Optimized:** Designed specifically for the YOLOv26n architecture.
-- **Triton gRPC Client:** Uses gRPC protocol for low-latency inference on Triton Inference Server.
-- **OpenCV Integration:** Seamlessly integrates with OpenCV for hardware-accelerated video capture and visualization.
-- **Edge Ready:** Modular architecture suitable for deployment on edge devices and high-load production servers.
-
-## Tech Stack
-
-- **Language:** C++17
-- **Inference Server:** NVIDIA Triton Inference Server 24.05
-- **Computer Vision:** OpenCV
-- **Communication:** gRPC
-- **Build System:** CMake
-
-## Project Structure
+## Pipeline
 
 ```text
-.
-├── include/                # Header files (inference_client.hpp)
-├── src/                    # Implementation (main.cpp, inference_client.cpp)
-├── model_repository/       # Triton model repository configuration
-│   └── triton_serve/
-│       └── yolo26n/       # yolo26n model configuration and versioning
-├── scripts/                # Helper scripts for server management and conversion
-├── third_party/            # Triton C++ Client SDK and libraries
-└── CMakeLists.txt          # Build configuration
+V4L2 camera
+    -> MMAP capture buffers
+    -> CUDA-mapped camera memory
+    -> GPU YUYV to normalized RGB planar preprocessing
+    -> 3 x 640 x 640 FP32 CUDA tensor
+    -> Triton CUDA shared memory
+    -> YOLOv26n inference
+    -> detection postprocessing
 ```
 
-## Getting Started
+The camera can capture at a configurable resolution, while the CUDA preprocessing kernel samples that frame into the model's fixed `640 x 640` input tensor. This prevents host copies and avoids allocating an output tensor sized for the camera frame instead of the model input.
 
-### Prerequisites
+## Key Capabilities
 
-- **OS:** Linux (Ubuntu recommended)
-- **NVIDIA GPU:** Required for GPU-accelerated inference
-- **NVIDIA Container Toolkit:** For running Triton in Docker
-- **OpenCV:** Installed on your system (`sudo apt install libopencv-dev`)
-- **Docker:** Required for starting the inference server
+- Native V4L2 capture with MMAP buffers.
+- CUDA registration and zero-copy access to camera buffers.
+- GPU YUYV preprocessing into normalized planar FP32 RGB.
+- CUDA stream-based preprocessing and inference synchronization.
+- Triton gRPC inference with CUDA shared memory registration.
+- YOLOv26n output decoding into bounding-box detections.
+- Signal-aware shutdown and explicit CUDA resource cleanup.
+- Stage-level latency statistics with totals, averages, extrema, variance, standard deviation, and percentiles.
+- Reproducible camera benchmarks with warmup exclusion and CSV export.
 
-### 1. Setup the Triton Inference Server
+## Requirements
 
-Ensure your yolo26n model weights are placed in [model_repository/triton_serve/yolo26n/1/](model_repository/triton_serve/yolo26n/1/). 
+- Linux with a V4L2 camera, for example `/dev/video0`.
+- NVIDIA GPU and CUDA Toolkit.
+- NVIDIA Container Toolkit and Docker for Triton.
+- OpenCV 5 development libraries.
+- CMake 3.20 or newer.
+- C++17 compiler.
+- Triton C++ client libraries in `third_party/triton`.
 
-Start the server using the provided script:
+The configured model expects:
+
+| Tensor | Type | Shape |
+| --- | --- | --- |
+| `images` | FP32 | `1 x 3 x 640 x 640` |
+| `output0` | FP32 | `1 x 300 x 6` |
+
+## Build
+
+Configure and build the debug or release tree:
 
 ```bash
-chmod +x scripts/start_triton.sh
+cmake -S . -B build/debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/debug -j"$(nproc)"
+```
+
+For a release build:
+
+```bash
+cmake -S . -B build/release -DCMAKE_BUILD_TYPE=Release
+cmake --build build/release -j"$(nproc)"
+```
+
+The main targets are:
+
+- `InferenceBackend`: live camera inference.
+- `timing_benchmark`: production-path camera benchmark.
+- `stage_stats_tests`: statistics unit tests, when enabled by the configured build.
+
+## Start Triton
+
+The model repository is under `model_repository/triton_serve`. Start Triton in a separate terminal:
+
+```bash
 ./scripts/start_triton.sh
 ```
 
-### 2. Build the C++ Backend
+The server exposes gRPC on `localhost:8001` by default. Confirm that the model is ready before starting the client.
 
-The project uses CMake for building. Ensure you have the `third_party/triton` SDK available in the root folder.
+## Run Live Inference
 
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-```
-
-### 3. Run the Application
-
-The application will attempt to connect to the Triton server at `localhost:8001` (gRPC) and open your default webcam (`/dev/video0`).
+Run until interrupted:
 
 ```bash
-./InferenceBackend
+./build/release/InferenceBackend
 ```
 
-## Configuration
-
-- **Triton URL:** Adjustable in [src/main.cpp](src/main.cpp) (Default: `localhost:8001`).
-- **Model Name:** Set to `yolo26n` in [src/main.cpp](src/main.cpp).
-- **Camera Device:** Index can be changed in the `cv::VideoCapture` initialization in [src/main.cpp](src/main.cpp).
-
-## Performance Benchmarks
-
-The backend reports per-stage timing statistics when the application exits. The
-reported stages include camera capture, preprocessing, Triton inference,
-postprocessing, rendering, display, and the complete inference pipeline. Each
-stage includes its sample count, average, minimum, and maximum duration in
-milliseconds.
-
-The following benchmarks were recorded using `perf_analyzer` on an NVIDIA Release 24.05 environment with a batch size of 1.
-
-| Metric | Value |
-| :--- | :--- |
-| **Throughput** | 28.11 infer/sec |
-| **Avg Latency** | 34.39 ms |
-| **p50 Latency** | 32.72 ms |
-| **p90 Latency** | 48.77 ms |
-| **p95 Latency** | 55.00 ms |
-| **p99 Latency** | 63.67 ms |
-
-### Server-Side Statistics (per request)
-- **Compute Infer:** 21.31 ms
-- **Compute Input:** 1.42 ms
-- **Compute Output:** 0.52 ms
-- **Queue Time:** 0.32 ms
-- **Overhead:** 1.91 ms
-
-### Reproducible Stage Benchmark
-
-The `timing_benchmark` executable runs the production preprocessing, Triton
-inference, and postprocessing path without opening a camera or display window.
-Images are discovered in sorted filename order. Warmup iterations are excluded
-from the reported statistics, and measurements include image loading and the
-complete inference pipeline.
-
-With Triton running and the dataset downloaded, run:
+Run a bounded smoke test:
 
 ```bash
-cmake -S . -B build
-cmake --build build --target timing_benchmark -j$(nproc)
-./build/timing_benchmark \
-	--input data/coco_1k_hf/images \
-	--warmup 20 \
-	--iterations 500 \
-	--output benchmark-results.csv
+./build/debug/InferenceBackend \
+    --device /dev/video0 \
+    --url localhost:8001 \
+    --model yolo26n \
+    --width 1280 \
+    --height 720 \
+    --frames 100
 ```
 
-Use `--max-images N` to limit the deterministic image set. The CSV contains
-sample count, total, average, minimum, maximum, standard deviation, and p50,
-p90, p95, and p99 latency for each stage. Set `--url` and `--model` when
-benchmarking a different Triton endpoint or model.
+Available options:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--device` | `/dev/video0` | V4L2 camera device |
+| `--url` | `localhost:8001` | Triton gRPC endpoint |
+| `--model` | `yolo26n` | Triton model name |
+| `--width` | `1280` | Requested camera width |
+| `--height` | `720` | Requested camera height |
+| `--frames` | `0` | Number of frames; `0` runs until Ctrl+C |
+
+## Benchmark the Current Pipeline
+
+`timing_benchmark` uses the same native V4L2, CUDA preprocessing, Triton, and postprocessing path as the live executable. Warmup frames are excluded. Only successfully captured and inferred frames are counted in the measured statistics.
+
+```bash
+./build/release/timing_benchmark \
+    --device /dev/video0 \
+    --warmup 20 \
+    --iterations 1000 \
+    --output benchmark.csv
+```
+
+The benchmark CSV uses this schema:
+
+```text
+stage,samples,total_ms,average_ms,min_ms,max_ms,stddev_ms,p50_ms,p90_ms,p95_ms,p99_ms
+```
+
+Current stages are:
+
+- `capture_and_preprocess`: V4L2 buffer acquisition and CUDA preprocessing launch.
+- `triton_inference`: Triton request and response handling.
+- `postprocess`: YOLO output decoding and coordinate scaling.
+- `inference_pipeline`: Complete inference operation, including Triton and postprocessing.
+- `total_ms`: Complete measured frame interval.
+
+To create timestamped benchmark artifacts with metadata:
+
+```bash
+./scripts/run_client_benchmark.sh
+```
+
+This stores `benchmark.csv`, console output, metadata, and the source revision under `results/runs/<run-number>/<timestamp>/`. The run number can be supplied as the first argument:
+
+```bash
+./scripts/run_client_benchmark.sh 3
+```
+
+To average all CSV files in the numbered result directories:
+
+```bash
+python3 scripts/write_average.py
+```
+
+The aggregation script supports both root-level CSV files and timestamped nested benchmark directories.
+
+## Latest Recorded Baseline
+
+The latest recorded run-3 summaries contain three 1,000-frame benchmark runs at `1280 x 720`, with 10 warmup frames per run. Values below are averages across those three runs; latency is measured in milliseconds.
+
+| Stage | Samples/run | Total (ms) | Average (ms) | Min (ms) | Max (ms) | Stddev (ms) | P50 (ms) | P90 (ms) | P95 (ms) | P99 (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `total_ms` | 1000 | 16978.499 | 16.978 | 13.309 | 40.821 | 1.332 | 16.807 | 17.569 | 18.150 | 21.247 |
+| `capture_and_preprocess` | 1000 | 28.150 | 0.028 | 0.017 | 0.299 | 0.025 | 0.023 | 0.033 | 0.049 | 0.147 |
+| `inference_pipeline` | 1000 | 16949.377 | 16.949 | 13.287 | 40.792 | 1.330 | 16.780 | 17.539 | 18.122 | 21.216 |
+| `triton_inference` | 1000 | 16571.877 | 16.572 | 12.953 | 40.225 | 1.311 | 16.405 | 17.153 | 17.721 | 20.716 |
+| `postprocess` | 1000 | 0.899 | 0.001 | 0.000 | 0.111 | 0.005 | 0.001 | 0.001 | 0.001 | 0.001 |
+
+The mean end-to-end latency of 16.978 ms corresponds to approximately 58.9 measured frames per second. Throughput depends on camera mode, GPU, Triton configuration, server load, and whether the client is CPU- or scheduler-limited.
+
+These values are an engineering baseline, not a universal performance guarantee. For comparisons, keep the camera resolution, warmup count, measured iteration count, model configuration, Triton version, GPU, and CPU affinity consistent.
+
+## Repository Layout
+
+```text
+.
+├── include/                 Public C++ interfaces
+├── src/                     Live client, V4L2 camera, CUDA preprocessing, statistics
+├── benchmarks/              Production-path timing benchmark
+├── scripts/                 Triton startup, benchmark, dataset, and export helpers
+├── model_repository/        Triton model configuration and model files
+├── third_party/triton/      Triton C++ client SDK and libraries
+├── tests/                   Unit tests
+└── results/runs/            Timestamped benchmark artifacts and averages
+```
+
+## Notes
+
+- The current camera path expects a capture format compatible with the CUDA YUYV preprocessing kernel. The default integrated camera exposes YUYV at `1280 x 720`.
+- `/dev/video1` may expose metadata rather than video frames; use a video-capture node such as `/dev/video0`.
+- The client requires Triton to be live before CUDA shared memory registration can succeed.
+- The benchmark intentionally does not include display or rendering time. Those stages belonged to the earlier OpenCV experiment and are not part of the current production path.
 
 ## License
 
