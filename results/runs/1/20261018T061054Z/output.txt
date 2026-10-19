@@ -1,0 +1,86 @@
+Benchmark configuration
+  model:       yolo26n
+  server:      localhost:8001
+  images:      1000
+  warmup:      10
+  iterations:  1000
+
+CSV written to "results/runs/1/20261018T061054Z.csv"
+
+Stage: Total time
+  Samples:         1000
+  Total           29252.008 ms
+  Average         29.252 ms
+  Minimum         23.012 ms
+  Maximum         156.205 ms
+  Variance        50.095 ms^2
+  Std deviation   7.078 ms
+  P50             27.493 ms
+  P90             33.999 ms
+  P95             40.084 ms
+  P99             53.862 ms
+
+Stage: inference_pipeline
+  Samples:         1000
+  Total           27063.518 ms
+  Average         27.064 ms
+  Minimum         21.195 ms
+  Maximum         152.863 ms
+  Variance        46.364 ms^2
+  Std deviation   6.809 ms
+  P50             25.433 ms
+  P90             31.707 ms
+  P95             35.856 ms
+  P99             52.013 ms
+
+Stage: postprocess
+  Samples:         1000
+  Total           1.216 ms
+  Average         0.001 ms
+  Minimum         0.001 ms
+  Maximum         0.053 ms
+  Variance        0.000 ms^2
+  Std deviation   0.002 ms
+  P50             0.001 ms
+  P90             0.001 ms
+  P95             0.002 ms
+  P99             0.005 ms
+
+Stage: triton_inference
+  Samples:         1000
+  Total           21296.689 ms
+  Average         21.297 ms
+  Minimum         18.149 ms
+  Maximum         147.789 ms
+  Variance        40.416 ms^2
+  Std deviation   6.357 ms
+  P50             19.722 ms
+  P90             24.776 ms
+  P95             28.300 ms
+  P99             44.520 ms
+
+Stage: preprocess
+  Samples:         1000
+  Total           5293.083 ms
+  Average         5.293 ms
+  Minimum         2.308 ms
+  Maximum         39.412 ms
+  Variance        2.660 ms^2
+  Std deviation   1.631 ms
+  P50             5.135 ms
+  P90             5.931 ms
+  P95             6.379 ms
+  P99             11.989 ms
+
+Stage: image_load
+  Samples:         1000
+  Total           2180.998 ms
+  Average         2.181 ms
+  Minimum         0.698 ms
+  Maximum         17.389 ms
+  Variance        1.027 ms^2
+  Std deviation   1.014 ms
+  P50             2.015 ms
+  P90             2.910 ms
+  P95             3.264 ms
+  P99             5.303 ms

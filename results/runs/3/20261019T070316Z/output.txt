@@ -1,0 +1,74 @@
+Benchmark configuration
+  device:      /dev/video0
+  resolution:  1280x720
+  model:       yolo26n
+  server:      localhost:8001
+  warmup:      10
+  iterations:  1000
+
+Stage: total_ms
+  Samples:         1000
+  Total           16789.839 ms
+  Average         16.790 ms
+  Minimum         13.046 ms
+  Maximum         22.945 ms
+  Variance        0.680 ms^2
+  Std deviation   0.825 ms
+  P50             16.697 ms
+  P90             17.384 ms
+  P95             17.937 ms
+  P99             20.077 ms
+
+Stage: inference_pipeline
+  Samples:         1000
+  Total           16761.801 ms
+  Average         16.762 ms
+  Minimum         13.027 ms
+  Maximum         22.920 ms
+  Variance        0.676 ms^2
+  Std deviation   0.822 ms
+  P50             16.672 ms
+  P90             17.355 ms
+  P95             17.917 ms
+  P99             20.046 ms
+
+Stage: postprocess
+  Samples:         1000
+  Total           0.989 ms
+  Average         0.001 ms
+  Minimum         0.000 ms
+  Maximum         0.152 ms
+  Variance        0.000 ms^2
+  Std deviation   0.007 ms
+  P50             0.001 ms
+  P90             0.001 ms
+  P95             0.001 ms
+  P99             0.001 ms
+
+Stage: triton_inference
+  Samples:         1000
+  Total           16377.280 ms
+  Average         16.377 ms
+  Minimum         12.694 ms
+  Maximum         22.549 ms
+  Variance        0.614 ms^2
+  Std deviation   0.783 ms
+  P50             16.300 ms
+  P90             16.956 ms
+  P95             17.459 ms
+  P99             19.299 ms
+
+Stage: capture_and_preprocess
+  Samples:         1000
+  Total           27.080 ms
+  Average         0.027 ms
+  Minimum         0.016 ms
+  Maximum         0.327 ms
+  Variance        0.001 ms^2
+  Std deviation   0.023 ms
+  P50             0.022 ms
+  P90             0.031 ms
+  P95             0.045 ms
+  P99             0.137 ms
+
+CSV written to "results/runs/3/20261019T070316Z/benchmark.csv"
