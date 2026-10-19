@@ -36,6 +36,7 @@ find_library(TRITON_GRPC_LIB
 
 add_library(camera_io STATIC
     src/native_v4l2_camera.cpp
+    src/yuyv_preprocess.cu
 )
 target_include_directories(camera_io PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -81,11 +82,13 @@ add_library(inference_core STATIC
     src/inference_client.cpp
     src/scoped_timer.cpp
 )
+target_compile_definitions(inference_core PUBLIC TRITON_ENABLE_GPU)
 target_include_directories(inference_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 target_link_libraries(inference_core PUBLIC
     ${OpenCV_LIBS}
+    CUDA::cudart
     Triton::grpcclient
     stage_stats
 PRIVATE
@@ -108,6 +111,7 @@ add_executable(timing_benchmark
 )
 target_link_libraries(timing_benchmark PRIVATE
     inference_core
+    camera_io
     ${OpenCV_LIBS}
     project_warnings
 )
