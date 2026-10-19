@@ -161,13 +161,25 @@ The aggregation script supports both root-level CSV files and timestamped nested
 
 The latest recorded run-3 summaries contain three 1,000-frame benchmark runs at `1280 x 720`, with 10 warmup frames per run. Values below are averages across those three runs; latency is measured in milliseconds.
 
-| Stage | Samples/run | Total (ms) | Average (ms) | Min (ms) | Max (ms) | Stddev (ms) | P50 (ms) | P90 (ms) | P95 (ms) | P99 (ms) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `total_ms` | 1000 | 16978.499 | 16.978 | 13.309 | 40.821 | 1.332 | 16.807 | 17.569 | 18.150 | 21.247 |
-| `capture_and_preprocess` | 1000 | 28.150 | 0.028 | 0.017 | 0.299 | 0.025 | 0.023 | 0.033 | 0.049 | 0.147 |
-| `inference_pipeline` | 1000 | 16949.377 | 16.949 | 13.287 | 40.792 | 1.330 | 16.780 | 17.539 | 18.122 | 21.216 |
-| `triton_inference` | 1000 | 16571.877 | 16.572 | 12.953 | 40.225 | 1.311 | 16.405 | 17.153 | 17.721 | 20.716 |
-| `postprocess` | 1000 | 0.899 | 0.001 | 0.000 | 0.111 | 0.005 | 0.001 | 0.001 | 0.001 | 0.001 |
+### Core Latency
+
+| Stage | Samples/run | Total (ms) | Average (ms) | Min (ms) | Max (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `total_ms` | 1000 | 16978.499 | 16.978 | 13.309 | 40.821 |
+| `capture_and_preprocess` | 1000 | 28.150 | 0.028 | 0.017 | 0.299 |
+| `inference_pipeline` | 1000 | 16949.377 | 16.949 | 13.287 | 40.792 |
+| `triton_inference` | 1000 | 16571.877 | 16.572 | 12.953 | 40.225 |
+| `postprocess` | 1000 | 0.899 | 0.001 | 0.000 | 0.111 |
+
+### Latency Distribution
+
+| Stage | Stddev (ms) | P50 (ms) | P90 (ms) | P95 (ms) | P99 (ms) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `total_ms` | 1.332 | 16.807 | 17.569 | 18.150 | 21.247 |
+| `capture_and_preprocess` | 0.025 | 0.023 | 0.033 | 0.049 | 0.147 |
+| `inference_pipeline` | 1.330 | 16.780 | 17.539 | 18.122 | 21.216 |
+| `triton_inference` | 1.311 | 16.405 | 17.153 | 17.721 | 20.716 |
+| `postprocess` | 0.005 | 0.001 | 0.001 | 0.001 | 0.001 |
 
 The mean end-to-end latency of 16.978 ms corresponds to approximately 58.9 measured frames per second. Throughput depends on camera mode, GPU, Triton configuration, server load, and whether the client is CPU- or scheduler-limited.
 
