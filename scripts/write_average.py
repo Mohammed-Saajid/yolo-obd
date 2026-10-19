@@ -24,7 +24,7 @@ METRIC_COLUMNS = (
 
 def read_results(run_directory: Path) -> tuple[dict[str, list[dict[str, float]]], list[Path]]:
 	rows_by_stage: dict[str, list[dict[str, float]]] = defaultdict(list)
-	csv_files = sorted(run_directory.glob("*.csv"))
+	csv_files = sorted(run_directory.rglob("*.csv"))
 	if not csv_files:
 		raise ValueError(f"No CSV files found in {run_directory}")
 
