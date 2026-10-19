@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${PROJECT_ROOT}"
+
+RUN_NUMBER="${1:-3}"
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_DIR="results/runs/2/${RUN_ID}"
+RUN_DIR="results/runs/${RUN_NUMBER}/${RUN_ID}"
+CSV_PATH="${RUN_DIR}/benchmark.csv"
 
 mkdir -p "${RUN_DIR}"
 
 echo "Saving benchmark to ${RUN_DIR}"
+
+cmake --build build/release --target timing_benchmark -j"$(nproc)"
 
 # Save the exact source revision and working-tree state.
 git rev-parse HEAD > "${RUN_DIR}/git-commit.txt"
@@ -31,8 +38,8 @@ git rev-parse HEAD > "${RUN_DIR}/git-commit.txt"
 
 # Save output while displaying it in the terminal.
 set +e
-taskset -c 0 ./build/release/timing_benchmark --iterations 1000 --camera 0 \
-    --output "${RUN_DIR}.csv" \
+taskset -c 0 ./build/release/timing_benchmark --warmup 10 --iterations 1000 \
+    --output "${CSV_PATH}" \
     2>&1 | tee "${RUN_DIR}/output.txt"
 BENCHMARK_STATUS=${PIPESTATUS[0]}
 set -e
